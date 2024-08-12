@@ -1,0 +1,36 @@
+<%- include('partials/header.ejs') %>
+
+<section id="section-create" class="section-create">
+  <h1>CREATE an ACCOUNT</h1>
+  <form action="/create" method="POST">
+    <label for="username">Username : </label>
+    <input
+      type="text"
+      id="username"
+      name="username"
+      required="true"
+      minlength="8"
+      maxlength="20"
+    />
+    <br />
+    <label for="password">Password : </label>
+    <input
+      type="password"
+      id="password"
+      name="password"
+      required="true"
+      minlength="8"
+      maxlength="20"
+    />
+    <button type="submit">CREATE</button>
+    <br />
+  </form>
+</section>
+
+<section id="section-create-message" class="section-create-message">
+  <% if(locals.message) { %>
+  <p><%= locals.message %></p>
+  <% } %>
+</section>
+
+<%- include('partials/footer.ejs') %>

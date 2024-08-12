@@ -1,0 +1,44 @@
+<%- include('partials/header.ejs') %>
+
+<section id="section-login" class="section-login">
+  <h1>LOGIN</h1>
+  <form action="/login" method="POST">
+    <label for="username">Username : </label>
+    <input
+      type="text"
+      id="username"
+      name="username"
+      required="true"
+      minlength="8"
+      maxlength="20"
+      autocomplete="username"
+    />
+    <br />
+    <label for="password">Password : </label>
+    <input
+      type="password"
+      id="password"
+      name="password"
+      required="true"
+      minlength="8"
+      maxlength="20"
+    />
+    <button type="submit">LOGIN</button>
+    <br />
+  </form>
+</section>
+
+<section id="section-login-message" class="section-login-message">
+  <% if(locals.message) { %>
+  <p><%= message %></p>
+  <% } %>
+</section>
+
+<section id="section-create" class="section-create">
+  <form action="/create" method="GET">
+    <p>Or CREATE an ACCOUNT</p>
+    <button type="submit">CREATE</button>
+  </form>
+</section>
+
+<%- include('partials/footer.ejs') %>
