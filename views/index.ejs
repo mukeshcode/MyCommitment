@@ -1,0 +1,237 @@
+<%- include("partials/header.ejs") %>
+
+<!-- <section class="section-group">
+  Available groups
+</section> -->
+
+<% if(locals.todayTasks) {%>
+  <% for(let tasks of todayTasks) { %>
+    <p><%= tasks.task_title %> : <%= tasks.task_description %></p>
+  <% } %>
+<% } %>
+
+<% if(locals.tomorrowTasks) {%>
+  <% for(let tasks of tomorrowTasks) { %>
+    <p><%= tasks.task_title %> : <%= tasks.task_description %></p>
+  <% } %>
+<% } else { %>
+  <section class="sn-tasks-tomorrow">
+    <form action="/addTask" method="POST">
+      <div id="div-task-list-tomorrow">
+        <div id="tomorrow-task-group-1" class="div-task-list-group">
+          <input
+            type="text"
+            id="tomorrow-task-title-1"
+            name="tomorrow-task-title-1"
+            class="tomorrow-task-title"
+            placeholder="title-1"
+            required="true"
+          />
+          <input
+            type="text"
+            id="tomorrow-task-desc-1"
+            name="tomorrow-task-desc-1"
+            class="tomorrow-task-desc"
+            placeholder="description-1"
+          />
+          <br />
+        </div>
+        <div id="tomorrow-task-group-2" class="div-task-list-group">
+          <input
+            type="text"
+            id="tomorrow-task-title-2"
+            name="tomorrow-task-title-2"
+            class="tomorrow-task-title"
+            placeholder="title-2"
+            required="true"
+          />
+          <input
+            type="text"
+            id="tomorrow-task-desc-2"
+            name="tomorrow-task-desc-2"
+            class="tomorrow-task-desc"
+            placeholder="description-2"
+          />
+          <br />
+        </div>
+        <div id="tomorrow-task-group-3" class="div-task-list-group">
+          <input
+            type="text"
+            id="tomorrow-task-title-3"
+            name="tomorrow-task-title-3"
+            class="tomorrow-task-title"
+            placeholder="title-3"
+            required="true"
+          />
+          <input
+            type="text"
+            id="tomorrow-task-desc-3"
+            name="tomorrow-task-desc-3"
+            class="tomorrow-task-desc"
+            placeholder="description-3"
+          />
+          <br />
+        </div>
+        <div id="tomorrow-task-group-4" class="div-task-list-group">
+          <input
+            type="text"
+            id="tomorrow-task-title-4"
+            name="tomorrow-task-title-4"
+            class="tomorrow-task-title"
+            placeholder="title-4"
+            required="true"
+          />
+          <input
+            type="text"
+            id="tomorrow-task-desc-4"
+            name="tomorrow-task-desc-4"
+            class="tomorrow-task-desc"
+            placeholder="description-4"
+          />
+          <br />
+        </div>
+        <div id="tomorrow-task-group-5" class="div-task-list-group">
+          <input
+            type="text"
+            id="tomorrow-task-title-5"
+            name="tomorrow-task-title-5"
+            class="tomorrow-task-title"
+            placeholder="title-5"
+            required="true"
+          />
+          <input
+            type="text"
+            id="tomorrow-task-desc-5"
+            name="tomorrow-task-desc-5"
+            class="tomorrow-task-desc"
+            placeholder="description-5"
+          />
+          <br />
+        </div>
+      </div>
+      <button id="btn-add-more-tasks" type="button">Add more tasks</button>
+      <button type="button" id="btn-lock-tasks">
+        LOCK these tasks for tomorrow
+      </button>
+      <button type="button" id="btn-remove-task" class="btn-remove-task">
+        Remove Last Task
+      </button>
+      <div id="dialog-box-lock" class="dialog-box-lock">
+        <p>Are you sure?</p>
+        <button type="submit" id="btn-lock-yes">YES</button>
+        <button type="button" id="btn-lock-no">NO</button>
+      </div>
+    </form>
+  </section>
+<% } %>
+
+<section class="sn-tasks-current"></section>
+
+<section class="alert-box" id="alert-box">
+  <p id="text-alert-box"></p>
+  <button id="btn-alert-box">OK</button>
+</section>
+
+<section class="section-logout">
+  <form action="/logout" method="POST">
+    <button type="submit" id="btn-logout" class="btn-logout">LOGOUT</button>
+  </form>
+</section>
+
+<script>
+  let counter = 5;
+  const counterLimit = 10;
+  const btnAddTasks = document.getElementById("btn-add-more-tasks");
+  const divTomorrowTaskList = document.getElementById("div-task-list-tomorrow");
+  const btnAlertBox = document.getElementById("btn-alert-box");
+  const btnRemoveTask = document.getElementById("btn-remove-task");
+  const btnLockTasks = document.getElementById("btn-lock-tasks");
+  const btnLockNo = document.getElementById("btn-lock-no");
+
+  btnAddTasks.addEventListener("click", addMoreTasks);
+  btnAlertBox.addEventListener("click", hideAlertBox);
+  btnRemoveTask.addEventListener("click", removeTask);
+  btnLockTasks.addEventListener("click", lockTasks);
+  btnLockNo.addEventListener("click", hideConfirmationBox);
+
+  function addMoreTasks() {
+    if (counter == counterLimit) {
+      showAlertBox("Maximum tasks limit is 10!");
+      return;
+    }
+    ++counter;
+    const divElement = document.createElement("div");
+    divElement.id = "tomorrow-task-group-" + counter;
+    divElement.className = "div-task-list-group";
+    const titleElement = document.createElement("input");
+    titleElement.type = "text";
+    titleElement.id = "tomorrow-task-title-" + counter;
+    titleElement.name = "tomorrow-task-title-" + counter;
+    titleElement.className = "tomorrow-task-title";
+    titleElement.placeholder = "title-" + counter;
+    titleElement.required = "true";
+    const descElement = document.createElement("input");
+    descElement.type = "text";
+    descElement.id = "tomorrow-task-desc-" + counter;
+    descElement.name = "tomorrow-task-desc-" + counter;
+    descElement.className = "tomorrow-task-desc";
+    descElement.placeholder = "description-" + counter;
+    const brElement = document.createElement("br");
+
+    divElement.appendChild(titleElement);
+    divElement.appendChild(descElement);
+    divElement.appendChild(brElement);
+
+    divTomorrowTaskList.appendChild(divElement);
+
+    showHideRemoveTaskBtn();
+  }
+
+  function showAlertBox(text) {
+    const alertBox = document.getElementById("alert-box");
+    const alertBoxText = document.getElementById("text-alert-box");
+    alertBox.style.display = "block";
+    alertBoxText.innerText = text;
+  }
+  function hideAlertBox() {
+    const alertBox = document.getElementById("alert-box");
+    const alertBoxText = document.getElementById("text-alert-box");
+    alertBoxText.innerText = "";
+    alertBox.style.display = "none";
+  }
+  function showHideRemoveTaskBtn() {
+    if (counter <= 5) btnRemoveTask.style.display = "none";
+    else btnRemoveTask.style.display = "block";
+  }
+  function removeTask() {
+    if (counter <= 5) return;
+
+    const divTaskList = document.getElementById("div-task-list-tomorrow");
+    const divGroup = document.getElementById("tomorrow-task-group-" + counter);
+    divTaskList.removeChild(divGroup);
+    --counter;
+    showHideRemoveTaskBtn();
+  }
+
+  function lockTasks() {
+    const titleElem = document.getElementsByClassName("tomorrow-task-title");
+    for (const elem of titleElem) {
+      if (elem.value === "") {
+        window.alert("Please fill all the titles, descriptions are optional");
+        return;
+      }
+    }
+    showConfirmationBox();
+  }
+
+  function showConfirmationBox() {
+    const confirmationBox = document.getElementById("dialog-box-lock");
+    confirmationBox.style.display = "block";
+  }
+  function hideConfirmationBox() {
+    const confirmationBox = document.getElementById("dialog-box-lock");
+    confirmationBox.style.display = "none";
+  }
+</script>
+
+<%- include("partials/footer.ejs") %>

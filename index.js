@@ -5,11 +5,15 @@ import env from "dotenv";
 import passport from "passport";
 import { Strategy } from "passport-local";
 import session from "express-session";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import path from "path";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const minLength = 8, maxLength = 20; // of username and password
 const saltRounds = 10;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 env.config();
 
@@ -25,6 +29,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 
 // Database configuration
@@ -38,19 +43,38 @@ const db = new pg.Client({
 
 db.connect();
 
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
   if (req.isAuthenticated()) {
-    res.render("secret.ejs");
+    let user = req.user;
+    let currentDate = new Date();
+    let tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+
+    currentDate = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${(currentDate.getDate()).toString().padStart(2, '0')}`;
+    tomorrowDate = `${tomorrowDate.getFullYear()}-${(tomorrowDate.getMonth() + 1).toString().padStart(2, '0')}-${(tomorrowDate.getDate()).toString().padStart(2, '0')}`;
+
+    const todayTasksRows = await db.query("SELECT * FROM tasks WHERE user_id=$1 and task_created_for_date=$2", [user.user_id, currentDate]);
+    const tomorrowTasksRows = await db.query("SELECT * FROM tasks WHERE user_id=$1 and task_created_for_date=$2", [user.user_id, tomorrowDate]);
+
+    if(todayTasksRows.rowCount > 0 && tomorrowTasksRows.rowCount > 0)
+      res.locals = {todayTasks : todayTasksRows.rows, tomorrowTasks : tomorrowTasksRows.rows};
+    else if(todayTasksRows.rowCount > 0)
+      res.locals = {todayTasks : todayTasksRows.rows};
+    else if(tomorrowTasksRows.rowCount > 0)
+      res.locals = {tomorrowTasks : tomorrowTasksRows.rows};
+    
+    res.render("index.ejs");
   } else {
     res.render("login.ejs");
   }
 });
 
+
 app.get("/create", (req, res) => {
   if (!req.isAuthenticated())
     res.render("create.ejs");
   else
-    res.redirect("/secret");
+    res.redirect("/");
 });
 
 app.post("/create", async (req, res) => {
@@ -83,7 +107,7 @@ app.post("/create", async (req, res) => {
           console.log("Account is created but error while logging in : " + err.stack);
           res.redirect("/login");
         } else {
-          res.redirect("/secret");
+          res.redirect("/");
         }
       })
     } else {
@@ -108,7 +132,7 @@ app.get("/login", (req, res) => {
 })
 
 app.post("/login", passport.authenticate("local", {
-  successRedirect: "/secret",
+  successRedirect: "/",
   failureRedirect: "/login",
   failureMessage: true
 }));
@@ -120,13 +144,32 @@ app.post("/logout", (req, res, next) => {
   })
 })
 
-app.get("/secret", (req, res) => {
+app.post("/addTask", async (req, res) => {
   if (req.isAuthenticated()) {
-    res.render("secret.ejs");
+    const taskList = Object.values(req.body);
+    const user = req.user;
+    const user_id = user.user_id;
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowDateString = `${tomorrowDate.getFullYear()}-${(tomorrowDate.getMonth() + 1).toString().padStart(2, '0')}-${(tomorrowDate.getDate()).toString().padStart(2, '0')}`;
+    try {
+      for (let i = 0; i < taskList.length; i += 2) {
+        const task_title = taskList[i];
+        const task_description = taskList[i + 1];
+        const result = await db.query("INSERT INTO tasks(task_title, task_description, task_created_for_date, user_id) values ($1, $2, $3, $4)", [task_title, task_description, tomorrowDateString, user_id]);
+      }
+      res.redirect("/");
+    } catch (err) {
+      console.log(err);
+      res.redirect("/");
+    }
   } else {
-    res.redirect("/");
+    res.redirect("/login");
   }
 })
+
+
+
 
 function validate(text, textName, minLength, maxLength, isAPassword) {
   let result = { isValid: true, msg: "Valid" };
